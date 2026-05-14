@@ -1,0 +1,50 @@
+{
+    "sad_3": {
+        "motivate": 0.1,
+        "advice": 0,
+        "distract": 0,
+        "deep": 0
+    },
+    "anxious_2": {
+        "motivate": 0,
+        "advice": 0.29701,
+        "distract": 0.1267309,
+        "deep": 0
+    },
+    "happy_2": {
+        "motivate": 0.31456359100000003,
+        "advice": 0,
+        "distract": 0.006814780999999992,
+        "deep": 0
+    },
+    "happy_0": {
+        "motivate": 0.0,
+        "advice": 0.199,
+        "distract": 0.11791000000000001,
+        "deep": 0.0
+    },
+    "anxious_0": {
+        "motivate": 0.09701,
+        "advice": 0.0,
+        "distract": -0.0010000000000000009,
+        "deep": -0.0912691
+    },
+    "sad_2": {
+        "motivate": -0.1,
+        "advice": -0.1,
+        "distract": -0.1,
+        "deep": 0.490099501
+    },
+    "sad_0": {
+        "motivate": 0.0,
+        "advice": 0.0,
+        "distract": 0.3940399,
+        "deep": 0.0
+    },
+    "angry_2": {
+        "motivate": 0.0,
+        "advice": 0.1,
+        "distract": 0.0,
+        "deep": 0.0
+    }
+}

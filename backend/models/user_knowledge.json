@@ -1,0 +1,12 @@
+{
+    "insights": [
+        {
+            "topic": "pets",
+            "value": "had a dog"
+        },
+        {
+            "topic": "academics",
+            "value": "passed a class with 98%"
+        }
+    ]
+}
