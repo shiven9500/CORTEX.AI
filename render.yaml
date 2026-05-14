@@ -14,4 +14,4 @@ services:
         value: sqlite:///./cortex.db
       - key: FRONTEND_URL
         # We will add this later in the Render Dashboard once Vercel is deployed
-        value: ""
+        value: "https://cortex-ai-lac-seven.vercel.app"
