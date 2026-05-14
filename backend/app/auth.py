@@ -15,6 +15,7 @@ logger = logging.getLogger("cortex-auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+ALLOWED_ORIGINS = ["localhost:3000", "localhost:3001", ".vercel.app"]
 
 class UpdateProfileRequest(BaseModel):
     name: str
@@ -58,7 +59,8 @@ async def login(provider: str, request: Request):
         from urllib.parse import urlparse
         parsed = urlparse(referer)
         origin = f"{parsed.scheme}://{parsed.netloc}"
-        if origin in ["http://localhost:3000", "http://localhost:3001"]:
+        # Accept localhost and any vercel.app domain
+        if any(allowed in parsed.netloc for allowed in ALLOWED_ORIGINS):
             request.session["frontend_url"] = origin
 
     logger.info(f"OAuth login: provider={provider}, redirect_uri={redirect_uri}")
