@@ -49,19 +49,16 @@ oauth.register(
 
 
 @router.get("/login/{provider}")
-async def login(provider: str, request: Request):
+async def login(provider: str, request: Request, redirect: str = ""):
     """Redirect user to OAuth provider's login page."""
     redirect_uri = request.url_for("auth_callback", provider=provider)
     
-    # Capture frontend URL from Referer header if available
-    referer = request.headers.get("referer")
-    if referer:
-        from urllib.parse import urlparse
-        parsed = urlparse(referer)
-        origin = f"{parsed.scheme}://{parsed.netloc}"
-        # Accept localhost and any vercel.app domain
-        if any(allowed in parsed.netloc for allowed in ALLOWED_ORIGINS):
-            request.session["frontend_url"] = origin
+    # Capture frontend URL from query param (most reliable method)
+    if redirect:
+        from urllib.parse import unquote
+        frontend_origin = unquote(redirect)
+        request.session["frontend_url"] = frontend_origin
+        logger.info(f"Frontend redirect saved: {frontend_origin}")
 
     logger.info(f"OAuth login: provider={provider}, redirect_uri={redirect_uri}")
     

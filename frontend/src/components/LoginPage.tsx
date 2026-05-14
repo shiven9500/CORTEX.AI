@@ -59,7 +59,8 @@ export default function LoginPage({ onComplete, initialStep = 0, initialName = "
   };
 
   const handleOAuthLogin = (provider: string) => {
-    window.location.href = `${API_BASE_URL}/auth/login/${provider}`;
+    const redirectTo = encodeURIComponent(window.location.origin);
+    window.location.href = `${API_BASE_URL}/auth/login/${provider}?redirect=${redirectTo}`;
   };
 
   const handleNext = () => {

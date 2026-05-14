@@ -416,14 +416,14 @@ export default function SettingsPanel({
                             icon={<GoogleIcon />}
                             label="Continue with Google"
                             description="Recommended · Fast & secure"
-                            onClick={() => { window.location.href = `${API_BASE}auth/login/google`; }}
+                            onClick={() => { window.location.href = `${API_BASE}auth/login/google?redirect=${encodeURIComponent(window.location.origin)}`; }}
                           />
                           {/* GitHub */}
                           <OAuthButton
                             icon={<Github size={18} className="text-white/80" />}
                             label="Continue with GitHub"
                             description="Great for developers"
-                            onClick={() => { window.location.href = `${API_BASE}auth/login/github`; }}
+                            onClick={() => { window.location.href = `${API_BASE}auth/login/github?redirect=${encodeURIComponent(window.location.origin)}`; }}
                           />
                         </div>
 
