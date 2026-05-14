@@ -12,3 +12,4 @@ authlib
 httpx
 itsdangerous
 sqlalchemy
+groq
