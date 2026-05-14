@@ -436,36 +436,33 @@ export default function App() {
   });
 
   useEffect(() => {
-    // Try backend auth with a timeout so we never hang
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    // Check URL params for OAuth callback data (passed by backend after login)
+    const params = new URLSearchParams(window.location.search);
+    const authSuccess = params.get("auth_success");
 
-    fetch(`${API_BASE_URL}/auth/me`, { signal: controller.signal, credentials: "include" })
-      .then(res => {
-        if (res.ok) return res.json();
-        return null;
-      })
-      .then(data => {
-        if (data && data.name) {
-          setOauthUser(data);
-          if (data.vibe && data.emotional_baseline) {
-            const profile = {
-              name: data.name,
-              vibe: data.vibe,
-              emotionalBaseline: data.emotional_baseline
-            };
-            localStorage.setItem("cortex_user_profile", JSON.stringify(profile));
-            setUserProfile(profile);
-          }
-        }
-      })
-      .catch(() => {
-        // Backend unreachable — that's fine, continue with guest flow
-      })
-      .finally(() => {
-        clearTimeout(timeout);
-        setIsCheckingAuth(false);
-      });
+    if (authSuccess === "true") {
+      const authName = params.get("auth_name") || "User";
+      const authEmail = params.get("auth_email") || "";
+      const authPicture = params.get("auth_picture") || "";
+      const authVibe = params.get("auth_vibe") || "";
+      const authBaseline = params.get("auth_baseline") || "";
+
+      // Set OAuth user data
+      setOauthUser({ name: authName, email: authEmail, picture: authPicture });
+
+      // If user already has vibe & baseline, go straight to app
+      if (authVibe && authBaseline) {
+        const profile = { name: authName, vibe: authVibe, emotionalBaseline: authBaseline };
+        localStorage.setItem("cortex_user_profile", JSON.stringify(profile));
+        setUserProfile(profile);
+      }
+      // Otherwise they'll go through the onboarding steps (vibe/baseline)
+
+      // Clean the URL so tokens aren't visible
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    setIsCheckingAuth(false);
   }, []);
 
   const handleProfileComplete = async (profile: UserProfile) => {

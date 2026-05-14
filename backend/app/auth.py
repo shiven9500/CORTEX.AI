@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models.user import User
 from dotenv import load_dotenv
+from urllib.parse import urlencode, quote
 import os
 import logging
 
@@ -15,7 +16,6 @@ logger = logging.getLogger("cortex-auth")
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-ALLOWED_ORIGINS = ["localhost:3000", "localhost:3001", ".vercel.app"]
 
 class UpdateProfileRequest(BaseModel):
     name: str
@@ -52,27 +52,25 @@ oauth.register(
 async def login(provider: str, request: Request, redirect: str = ""):
     """Redirect user to OAuth provider's login page."""
     redirect_uri = request.url_for("auth_callback", provider=provider)
-    
-    # Capture frontend URL from query param (most reliable method)
+
+    # Save the frontend origin so we know where to redirect after OAuth
     if redirect:
-        from urllib.parse import unquote
-        frontend_origin = unquote(redirect)
-        request.session["frontend_url"] = frontend_origin
-        logger.info(f"Frontend redirect saved: {frontend_origin}")
+        request.session["frontend_url"] = redirect
+        logger.info(f"Frontend redirect saved: {redirect}")
 
     logger.info(f"OAuth login: provider={provider}, redirect_uri={redirect_uri}")
-    
+
     if provider == "google":
         return await oauth.google.authorize_redirect(request, redirect_uri)
     elif provider == "github":
         return await oauth.github.authorize_redirect(request, redirect_uri)
-    
+
     raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
 
 
 @router.get("/callback/{provider}", name="auth_callback")
 async def auth_callback(provider: str, request: Request, db: Session = Depends(get_db)):
-    """Handle the OAuth callback, create/find user, redirect to frontend."""
+    """Handle the OAuth callback, create/find user, redirect to frontend with user data."""
     try:
         if provider == "google":
             token = await oauth.google.authorize_access_token(request)
@@ -89,7 +87,7 @@ async def auth_callback(provider: str, request: Request, db: Session = Depends(g
             name = gh_user.get("name") or gh_user.get("login")
             picture = gh_user.get("avatar_url")
             email = gh_user.get("email")
-            
+
             # GitHub may hide email — fetch from /user/emails
             if not email:
                 email_resp = await oauth.github.get("user/emails", token=token)
@@ -103,7 +101,8 @@ async def auth_callback(provider: str, request: Request, db: Session = Depends(g
 
         if not email:
             logger.error(f"No email returned from {provider}")
-            return RedirectResponse(url=f"{FRONTEND_URL}?error=no_email")
+            return_url = request.session.pop("frontend_url", FRONTEND_URL)
+            return RedirectResponse(url=f"{return_url}?error=no_email")
 
         # Find or create user
         user = db.query(User).filter(User.email == email).first()
@@ -122,12 +121,20 @@ async def auth_callback(provider: str, request: Request, db: Session = Depends(g
             db.commit()
             logger.info(f"Existing user logged in: {email}")
 
-        # Store in session
-        request.session["user_id"] = user.id
-
-        # Redirect back to frontend
+        # Redirect back to frontend WITH user data in the URL
+        # This bypasses cross-domain cookie issues entirely
         return_url = request.session.pop("frontend_url", FRONTEND_URL)
-        return RedirectResponse(url=return_url)
+        params = urlencode({
+            "auth_success": "true",
+            "auth_name": name or "User",
+            "auth_email": email,
+            "auth_picture": picture or "",
+            "auth_vibe": user.vibe or "",
+            "auth_baseline": user.emotional_baseline or "",
+        })
+        redirect_url = f"{return_url}?{params}"
+        logger.info(f"Redirecting to frontend: {return_url}")
+        return RedirectResponse(url=redirect_url)
 
     except Exception as e:
         logger.error(f"OAuth callback error: {e}", exc_info=True)
@@ -165,11 +172,11 @@ async def update_profile(req: UpdateProfileRequest, request: Request, db: Sessio
     user_id = request.session.get("user_id")
     if not user_id:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user.name = req.name
     user.vibe = req.vibe
     user.emotional_baseline = req.emotional_baseline
