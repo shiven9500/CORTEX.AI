@@ -28,19 +28,11 @@ async def startup_event():
 # Add Session Middleware
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "super-secret-key"))
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "")
-
-origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-]
-if FRONTEND_URL:
-    origins.append(FRONTEND_URL)
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # Add your frontend URL
-    allow_credentials=True, # Critical for sessions
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel preview/prod URLs
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

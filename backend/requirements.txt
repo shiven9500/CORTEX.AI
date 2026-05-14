@@ -13,4 +13,3 @@ httpx
 itsdangerous
 sqlalchemy
 groq
-psycopg2-binary
